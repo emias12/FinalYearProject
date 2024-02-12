@@ -1,3 +1,4 @@
 confounds/
 nifti_files/
+parcellation/
 __pycache__/
