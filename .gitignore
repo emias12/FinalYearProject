@@ -3,3 +3,6 @@ nifti_files/
 parcellation/
 __pycache__/
 eeg_sample_data/
+sMRI/
+medications.txt
+participants.txt
