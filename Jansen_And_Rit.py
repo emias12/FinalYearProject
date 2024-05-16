@@ -112,9 +112,13 @@ initial_conditions = np.ones((8, num_nodes)) * 0.5
 total_sims = int((transient + sim_length/ dt) - 1)
 total_downsampled_sims = int(total_sims / downsample_eeg)
 
-def run_jansen_and_rit(c_inp):
+def run_jansen_and_rit(A_inp, B_inp, C_inp):
+    global A
+    global B
     global C
-    C = c_inp
+    A = A_inp
+    B = B_inp
+    C = C_inp
 
     # Array to store results
     sol = np.zeros((total_downsampled_sims, 8, num_nodes))
