@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mne 
 from sklearn import datasets
+from scipy.stats import pearsonr
 
 # Parameters ###################################################################
 
@@ -126,7 +127,7 @@ def run_jansen_and_rit(c_inp):
         y_temp += dt * np.array(system_of_equations(y_temp))
         if i % downsample_eeg == 0:
             sol[int(i/downsample_eeg) - 1] = np.copy(y_temp)
-    
+
     x1 = sol[:,2]
     x2 = sol[:,4]
     x3 = np.apply_along_axis(calculate_zi, axis=1, arr=sol[:, 6])
