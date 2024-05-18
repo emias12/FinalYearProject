@@ -1,35 +1,48 @@
 import os 
-from scipy.stats import pearsonr
-eeg_raw_data_dir = 'C:/Users/stapl/Documents/CDocuments/FinalYearProject/Model/eeg_raw_data'
 import numpy as np
 import mne
+from scipy.stats import zscore
 
-all_channels_data = {} # Will be of length 68 as this is max channels
+eeg_raw_data_dir = 'C:/Users/stapl/Documents/CDocuments/FinalYearProject/Model/eeg_raw_data'
+
+all_channels_psds = {} # Will be of length 68 as this is max channels
+
 smallest_ch_samples = 74255 #precalculated
 
 def gen_emp_psd(eeg_freq):   
-    i = 0
     for filename in os.listdir(eeg_raw_data_dir):
-        if i < 10:
-            eeg_path = os.path.join(eeg_raw_data_dir, filename)
-            raw = mne.io.read_raw_fif(eeg_path, preload=True)
-            for ch in raw.ch_names:
-                # Different samples have different time points! 
-                channel_samples = raw[ch, 0:smallest_ch_samples][0] # Take first of tuple, as second item is the time
-                if ch in all_channels_data.keys():
-                    all_channels_data[ch].append(channel_samples)
-                else:
-                    all_channels_data[ch] = [channel_samples]
-            i += 1
+        eeg_path = os.path.join(eeg_raw_data_dir, filename)
+        raw = mne.io.read_raw_fif(eeg_path, preload=True)
 
-    for ch in all_channels_data.keys():
-        stacked_data = np.stack(all_channels_data[ch])
-        average_array = np.mean(stacked_data, axis=0)
-        all_channels_data[ch] = average_array
+        # In order to average spectra, must have stationary signal, so z-score signals first
+        data = raw.get_data()  # shape is (n_channels, n_samples)
+        data = zscore(data, axis=1)
 
-    emp_data = np.squeeze(np.stack(list(all_channels_data.values())))
-    info = mne.create_info(list(all_channels_data.keys()), sfreq=eeg_freq, ch_types='eeg')
-    emp_raw = mne.io.RawArray(emp_data, info)#
-    # Added concurrency, -1 will use all cores
-    emp_spec = emp_raw.compute_psd(fmin=0, fmax=80, picks="all", n_jobs=-1)
-    np.save('emp_spec.npy', emp_spec)
+        # Compute PSD using Welch's method for each channel
+        for ch_idx, ch_name in enumerate(raw.ch_names):
+            ch_data = data[ch_idx, :]  # Get data for the specific channel
+            psd, _ = mne.time_frequency.psd_array_welch(
+                ch_data, sfreq=eeg_freq, fmin=0, fmax=80, window='hamming'
+            )
+            if ch_name in all_channels_psds:
+                all_channels_psds[ch_name].append(psd)
+            else:
+                all_channels_psds[ch_name] = [psd]
+
+
+    # Average PSDs across all subjects for each channel
+    for ch_name in all_channels_psds.keys():
+        stacked_psds = np.stack(all_channels_psds[ch_name])
+        avg_psd = np.mean(stacked_psds, axis=0)
+        all_channels_psds[ch_name] = avg_psd
+
+    # Combine the averaged PSDs into a single array
+    # Shape (68, time_samples)
+    emp_psd = np.stack(list(all_channels_psds.values()))
+
+    # Change once have leadfield - as can do a vector pearson correlation
+    # Take the mean of PSDs across all channels. Will just have dimension of time_samples
+    average_emp_psd = np.mean(emp_psd, axis=0)
+
+    # Save the average spectrum
+    np.save('emp_spec.npy', emp_psd)
