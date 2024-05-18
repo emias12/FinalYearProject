@@ -42,11 +42,6 @@ def gen_emp_psd(eeg_freq):
     # Combine the averaged PSDs into a single array
     # Shape (68, time_samples)
     emp_psd = np.stack(list(all_channels_psds.values()))
-    
-    # Change once have leadfield - as can do a vector pearson correlation
-    # Take the mean of PSDs across all channels. Will just have dimension of time_samples
-    average_emp_psd = np.mean(emp_psd, axis=0)
 
     # Save the average spectrum
     np.save('emp_spec.npy', emp_psd)
-
