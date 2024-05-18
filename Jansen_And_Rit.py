@@ -78,7 +78,7 @@ def calculate_zi(x3):
 
 norm = np.sqrt(np.sum(SC, axis = 1) * np.sum(SC, axis = 0))
 
-# Expanded Jansen & Rit Model 
+# Expanded Jansen & Rit Model
 def system_of_equations(x):
     x0, y0, x1, y1, x2, y2, x3, y3 = x
 
@@ -111,6 +111,7 @@ initial_conditions = np.ones((8, num_nodes)) * 0.5
 
 total_sims = int((transient + sim_length/ dt) - 1)
 total_downsampled_sims = int(total_sims / downsample_eeg)
+
 
 def run_jansen_and_rit(A_inp, B_inp, C_inp):
     global A

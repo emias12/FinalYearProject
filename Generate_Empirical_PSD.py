@@ -8,8 +8,10 @@ eeg_raw_data_dir = 'C:/Users/stapl/Documents/CDocuments/FinalYearProject/Model/e
 all_channels_psds = {} # Will be of length 68 as this is max channels
 
 smallest_ch_samples = 74255 #precalculated
+observed_freq_cap = 80
+n_fft = 2048
 
-def gen_emp_psd(eeg_freq):   
+def gen_emp_psd(eeg_freq):
     for filename in os.listdir(eeg_raw_data_dir):
         eeg_path = os.path.join(eeg_raw_data_dir, filename)
         raw = mne.io.read_raw_fif(eeg_path, preload=True)
@@ -21,14 +23,15 @@ def gen_emp_psd(eeg_freq):
         # Compute PSD using Welch's method for each channel
         for ch_idx, ch_name in enumerate(raw.ch_names):
             ch_data = data[ch_idx, :]  # Get data for the specific channel
-            psd, _ = mne.time_frequency.psd_array_welch(
-                ch_data, sfreq=eeg_freq, fmin=0, fmax=80, window='hamming'
+
+            psd, _  = mne.time_frequency.psd_array_welch(
+                ch_data, sfreq=eeg_freq, fmin=0, fmax=80, n_fft=n_fft, n_overlap=n_fft//2 , window='hamming'
             )
+
             if ch_name in all_channels_psds:
                 all_channels_psds[ch_name].append(psd)
             else:
                 all_channels_psds[ch_name] = [psd]
-
 
     # Average PSDs across all subjects for each channel
     for ch_name in all_channels_psds.keys():
@@ -39,10 +42,11 @@ def gen_emp_psd(eeg_freq):
     # Combine the averaged PSDs into a single array
     # Shape (68, time_samples)
     emp_psd = np.stack(list(all_channels_psds.values()))
-
+    
     # Change once have leadfield - as can do a vector pearson correlation
     # Take the mean of PSDs across all channels. Will just have dimension of time_samples
     average_emp_psd = np.mean(emp_psd, axis=0)
 
     # Save the average spectrum
     np.save('emp_spec.npy', emp_psd)
+
