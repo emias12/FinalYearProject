@@ -76,8 +76,6 @@ def calculate_zi(x3):
 
 # System of Equations ########################################################  
 
-norm = np.sqrt(np.sum(SC, axis = 1) * np.sum(SC, axis = 0))
-
 # Expanded Jansen & Rit Model
 def system_of_equations(x):
     x0, y0, x1, y1, x2, y2, x3, y3 = x

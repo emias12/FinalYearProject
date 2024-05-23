@@ -20,6 +20,7 @@ def gen_emp_psd(eeg_freq):
         data = raw.get_data()  # shape is (n_channels, n_samples)
         data = zscore(data, axis=1)
 
+        print(raw.ch_names)
         # Compute PSD using Welch's method for each channel
         for ch_idx, ch_name in enumerate(raw.ch_names):
             ch_data = data[ch_idx, :]  # Get data for the specific channel
@@ -40,7 +41,7 @@ def gen_emp_psd(eeg_freq):
         all_channels_psds[ch_name] = avg_psd
 
     # Combine the averaged PSDs into a single array
-    # Shape (68, time_samples)
+    # Shape (68, freq_samples)
     emp_psd = np.stack(list(all_channels_psds.values()))
 
     # Save the average spectrum
