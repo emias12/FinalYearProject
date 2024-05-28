@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import mne 
 from sklearn import datasets
 from scipy.stats import pearsonr
+import hashlib
+import os
+import json
 
 # Parameters ###################################################################
 
@@ -111,7 +114,7 @@ total_sims = int((transient + sim_length/ dt) - 1)
 total_downsampled_sims = int(total_sims / downsample_eeg)
 
 
-def run_jansen_and_rit(A_inp, B_inp, C_inp):
+def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
     global A
     global B
     global C

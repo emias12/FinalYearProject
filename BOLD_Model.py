@@ -23,23 +23,19 @@ V_0 = 0.03 # fraction of deoxygenated blood in resting state
 
 # Above is from the Neuromod, but had already got firing rates before converted to voltage above, so 
 # probably makes more sense to sum x1 x2 x3 (as all need blood)
-%store -r x1
-%store -r x2
-%store -r x3
-raw_firing_rates = x1 + x2 + x3
-
-# Calculate mean and standard deviation across all nodes
-mean_firing_rate = np.mean(raw_firing_rates)
-std_firing_rate = np.std(raw_firing_rates)
-
-# Standardize firing rates
-firing_rates = (raw_firing_rates - mean_firing_rate) / std_firing_rate
-
-scaling = 1
-# instead of multiplying by arbitrary factor, can standardise - divide by standard deviation, so sd becomes 1
 
 # ODEs for Balloon Windkessel Model
-def balloon_windkessel_ode(state, t):
+def balloon_windkessel_ode(state, t, x1, x2, x3):
+
+    raw_firing_rates = x1 + x2 + x3
+
+    # Calculate mean and standard deviation across all nodes
+    mean_firing_rate = np.mean(raw_firing_rates)
+    std_firing_rate = np.std(raw_firing_rates)
+
+    # Standardize firing rates
+    firing_rates = (raw_firing_rates - mean_firing_rate) / std_firing_rate
+
     # s: vasodilatory response
     # f: blood inflow
     # v: blood volume
@@ -47,7 +43,7 @@ def balloon_windkessel_ode(state, t):
     s, f, v, q = state
     
     # NOTE - multiplying firing rate by a large constant
-    ds_dt  = scaling * firing_rates[t] - s / tau_s - (f - 1) / tau_f
+    ds_dt  = firing_rates[t] - s / tau_s - (f - 1) / tau_f
     df_dt = s
     dv_dt = (f - v**(1/k)) / tau_v
     dq_dt = ((f * (1 - (1 - E_0)**(1 / f))) / E_0 - (q * v**(1/k)) / v) / tau_q
