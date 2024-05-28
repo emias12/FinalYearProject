@@ -1,18 +1,20 @@
-% Add FieldTrip to your MATLAB path
 addpath('C:/ProgramData/Microsoft/Windows/Start Menu/Programs/MATLAB R2024a/fieldtrip-20240515');
 
-% Initialize FieldTrip defaults
 ft_defaults;
 %%
+% Use standard head model 
 headmodel = ft_read_headmodel('standard_bem.mat')
 ft_plot_headmodel(headmodel, 'facealpha', 0.3)
 hold on
+% Take sensor data from .elc file created from Hardik's data
 elec = ft_read_sens('eeg_data.elc'); 
 ft_plot_sens(elec)
+% Read parcellation coordinates and separate data
 t = readtable('Schaefer2018_100Parcels_7Networks_order_FSLMNI152_2mm.Centroid_RAS.csv');
 pos = t{:, ["R", "A", "S"]};
 
 %%
+% Plots sensors on headmodel
 ft_plot_cloud(pos, [], 'radius', 10, 'scalerad', 'no');
 %%
 cfg = [];
