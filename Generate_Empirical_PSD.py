@@ -5,7 +5,7 @@ from scipy.stats import zscore
 
 eeg_raw_data_dir = 'C:/Users/stapl/Documents/CDocuments/FinalYearProject/Model/eeg_raw_data'
 
-all_channels_psds = {} # Will be of length 68 as this is max channels
+all_channels_psds = {} # Will be of length 62 as this is max channels
 
 smallest_ch_samples = 74255 #precalculated
 observed_freq_cap = 80
@@ -20,9 +20,13 @@ def gen_emp_psd(eeg_freq):
         data = raw.get_data()  # shape is (n_channels, n_samples)
         data = zscore(data, axis=1)
 
-        print(raw.ch_names)
+        # Exclude non-EEG channels
+        exclude_channels = ['CB1', 'CB2', 'VEO', 'HEO', 'EKG', 'EMG']
+        filtered_ch_names = [ch_name for ch_name in raw.ch_names if ch_name not in exclude_channels]
+
         # Compute PSD using Welch's method for each channel
-        for ch_idx, ch_name in enumerate(raw.ch_names):
+        for ch_idx, ch_name in enumerate(filtered_ch_names):
+
             ch_data = data[ch_idx, :]  # Get data for the specific channel
 
             psd, _  = mne.time_frequency.psd_array_welch(
@@ -35,13 +39,13 @@ def gen_emp_psd(eeg_freq):
                 all_channels_psds[ch_name] = [psd]
 
     # Average PSDs across all subjects for each channel
-    for ch_name in all_channels_psds.keys():
+    for ch_name in filtered_ch_names :
         stacked_psds = np.stack(all_channels_psds[ch_name])
         avg_psd = np.mean(stacked_psds, axis=0)
         all_channels_psds[ch_name] = avg_psd
 
     # Combine the averaged PSDs into a single array
-    # Shape (68, freq_samples)
+    # Shape (62, freq_samples)
     emp_psd = np.stack(list(all_channels_psds.values()))
 
     # Save the average spectrum

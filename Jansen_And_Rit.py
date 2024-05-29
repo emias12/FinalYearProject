@@ -1,11 +1,13 @@
 import numpy as np
+from numpy import linalg
 import matplotlib.pyplot as plt
 import mne 
 from sklearn import datasets
 from scipy.stats import pearsonr
 import hashlib
 import os
-import json
+import gc
+import scipy.stats, scipy.io
 
 # Parameters ###################################################################
 
@@ -50,11 +52,8 @@ mean_firing_threshold = 6
 
 # Sigmoid Function - transforms the postynaptic potential (PSP) into an average pulse density 
 # v is the average psp, r is the slope of the sigmoid function
-# def sigmoid(v, r):
-#     return max_firing_rate / (1 + np.exp(r * (mean_firing_threshold - v))) # output is num_nodes x 1 
-
-def sigmoid(v,r):
-    return max_firing_rate  / (1 + np.exp(r * (mean_firing_threshold - v)))
+def sigmoid(v, r):
+    return max_firing_rate / (1 + np.exp(r * (mean_firing_threshold - v))) # output is num_nodes x 1
 
 # PSPs ###################################################################
 # t is average pulse density/spike rate 
@@ -113,6 +112,45 @@ initial_conditions = np.ones((8, num_nodes)) * 0.5
 total_sims = int((transient + sim_length/ dt) - 1)
 total_downsampled_sims = int(total_sims / downsample_eeg)
 
+# Leadfield ###################################################################
+
+# Load leadfield matrix
+
+leadfield = scipy.io.loadmat('reshaped_leadfield.mat')
+leadfield = leadfield['leadfield'] # Shape (100, 62, 3)
+leadfield = linalg.norm(leadfield, axis=-1).T
+
+nb_sources = 100
+nb_sensors = 62
+
+def pass_through_leadfield(sim_data):
+    sim_eeg_sources = sim_data.T
+    sim_eeg_sensors = leadfield @ sim_eeg_sources
+    sim_eeg_zscores = scipy.stats.zscore(sim_eeg_sensors, axis=0)
+    return sim_eeg_zscores.T
+
+# Memoization ###################################################################
+
+cache_dir = "cache"
+
+def generate_cache_key(params):
+    params_str = "_".join(map(str, params))
+    return hashlib.md5(params_str.encode()).hexdigest()
+
+def cache_result(params, result):
+    key = generate_cache_key(params)
+    file_path = os.path.join(cache_dir, key + ".npy")
+    np.save(file_path, result[0])
+    gc.collect()
+
+def load_cached_result(params):
+    key = generate_cache_key(params)
+    file_path = os.path.join(cache_dir, key + ".npy")
+    if os.path.exists(file_path):
+        return np.load(file_path, allow_pickle=True)
+    return None
+
+# Run Jansen & Rit Model ########################################################
 
 def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
     global A
@@ -128,20 +166,37 @@ def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
     y_temp = np.copy(initial_conditions)
 
     # Run simulation using Euler method
-    for i in range(1, total_sims - 1):
-        # sol[i] = sol[i-1] + dt * np.array(system_of_equations(sol[i-1])) # Doing it this way makes it abt 30 secs faster, good for optimising model
+    for i in range(1, total_sims):
         y_temp += dt * np.array(system_of_equations(y_temp))
         if i % downsample_eeg == 0:
             sol[int(i/downsample_eeg) - 1] = np.copy(y_temp)
 
-    x1 = sol[:,2]
-    x2 = sol[:,4]
-    x3 = np.apply_along_axis(calculate_zi, axis=1, arr=sol[:, 6])
+    x1 = sol[:-1, 2]
+    x2 = sol[:-1, 4]
+    x3 = np.apply_along_axis(calculate_zi, axis=1, arr=sol[:-1, 6])
 
     # eeg_freq is 1000Hz, i.e. 1000 points per second. So 2000 points in 2 seconds. 
     time_points_in_2_secs = int(2 * eeg_freq)
 
     # With vectorised operations, Calculate V_T_sim directly for the desired time points
-    V_T_sim = C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:] + C * alpha * x3[-time_points_in_2_secs:]
+    V_T_sim = pass_through_leadfield(C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:]
+                                      + C * alpha * x3[-time_points_in_2_secs:])
 
     return(x1, x2, x3, V_T_sim)
+
+
+def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp):
+    params = [A_inp, B_inp, C_inp]
+
+    cached_result = load_cached_result(params)
+    if cached_result is not None:
+        print("cached")
+        return cached_result
+    else:
+        x1, x2, x3, _  = run_jansen_and_rit(A_inp, B_inp, C_inp)
+        return (x1, x2, x3)
+
+
+def run_jansen_and_rit_with_caching(A_inp, B_inp, C_inp):
+    x1, x2, x3, V_T_sim = run_jansen_and_rit(A_inp, B_inp, C_inp)
+    cache_result([A_inp, B_inp, C_inp], [x1, x2, x3])
