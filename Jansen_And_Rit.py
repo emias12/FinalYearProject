@@ -150,6 +150,9 @@ def load_cached_result(params):
         return np.load(file_path, allow_pickle=True)
     return None
 
+cache_count = 0
+non_cached_count = 0
+
 # Run Jansen & Rit Model ########################################################
 
 def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
@@ -190,9 +193,10 @@ def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp):
 
     cached_result = load_cached_result(params)
     if cached_result is not None:
-        print("cached")
+        cached_count += 1
         return cached_result
     else:
+        non_cached_count += 1
         x1, x2, x3, _  = run_jansen_and_rit(A_inp, B_inp, C_inp)
         return (x1, x2, x3)
 
@@ -200,3 +204,7 @@ def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp):
 def run_jansen_and_rit_with_caching(A_inp, B_inp, C_inp):
     x1, x2, x3, V_T_sim = run_jansen_and_rit(A_inp, B_inp, C_inp)
     cache_result([A_inp, B_inp, C_inp], [x1, x2, x3])
+
+# This is just for logging how useful the cacheing is for report purposes
+def get_cached_counts():
+    return (cache_count, non_cached_count)
