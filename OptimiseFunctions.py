@@ -7,17 +7,17 @@ from scipy.stats import pearsonr
 
 
 def find_eeg_loss(x):
-    print(x[0], x[1], x[2]) # A, B, C
+    print(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10]) # A, B, C, a, ad, b, r_0, r_1, r_2, alpha, beta
 
     # Running cached version, so x1 x2 x3 saved to be used in optimise BOLD if same paramters input
-    x1, x2, x3, V_T_sim = JR.run_jansen_and_rit_with_caching(x[0], x[1], x[2])
-
+    x1, x2, x3, V_T_sim = JR.run_jansen_and_rit_with_caching(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10])
     emp_spec = np.load('emp_spec.npy', allow_pickle=True)
 
     gen_data = V_T_sim.T
     fake_info = mne.create_info(62, sfreq=JR.eeg_freq, ch_types='eeg')
     gen_raw = mne.io.RawArray(gen_data, fake_info)
     gen_spec = gen_raw.compute_psd(fmin=0, fmax=80, picks="all")
+
     # Trims the data to the same number of freq samples, marginal diff (161 to 168, as empirical over 8 seconds and generated over 2)
     freq_samples = min(gen_spec.shape[1], emp_spec.shape[1])
     gen_spec_data = gen_spec[:, :freq_samples] # Shape (62, freq_samples)
@@ -44,11 +44,11 @@ def find_eeg_loss(x):
 observed_fc_matrix = np.load("fc_matrices/average_schiz_matrix.npy")
 
 def find_bold_loss(x):
-    print(x[0], x[1], x[2])
+    print(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10])
 
     # If already calculated by optimise EEG, will retrieve saved
     # Otherwise, will run model again
-    x1, x2, x3 = JR.run_jansen_and_rit_with_retrieval(x[0], x[1], x[2])
+    x1, x2, x3 = JR.run_jansen_and_rit_with_retrieval(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10])
 
     # As J&R model already run with downsampling for eeg, need to adjust downsampling rate
     adjusted_downsample = int(JR.downsample_bold / JR.downsample_eeg)

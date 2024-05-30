@@ -12,7 +12,7 @@ import scipy.stats, scipy.io
 # Parameters ###################################################################
 
 max_firing_rate = 5         # (per second)
-mean_firing_threshold = 0.5 # [Theta] (mV), half of the maximum response of the pop
+mean_firing_threshold = 2.5 # [Theta] (mV), half of the maximum response of the pop
 
 # Sigmoid slopes (mV^-1) 
 r_0 = 0.56
@@ -47,8 +47,6 @@ beta = 0  # inhibitory gain, connectibity between inhibitory and excitatory inte
 num_nodes = 100
 SC = np.genfromtxt('SC_in_Schaefer-100.csv', delimiter=',')
 
-max_firing_rate = 5
-mean_firing_threshold = 6
 
 # Sigmoid Function - transforms the postynaptic potential (PSP) into an average pulse density 
 # v is the average psp, r is the slope of the sigmoid function
@@ -162,14 +160,32 @@ non_cached_count = 0
 # mean_firing_threshold = 6
 # max_firing_rate = 5
 
-def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
+ # A, B, C, a, ad, b, r_0, r_1, r_2, alpha, beta
+
+def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C, a_inp=a, ad_inp=ad, b_inp=b, r_0_inp=r_0, r_1_inp=r_1, r_2_inp=r_2, alpha_inp=alpha, beta_inp=beta):
     global A
     global B
     global C
+    global a
+    global ad
+    global b
+    global r_0
+    global r_1
+    global r_2
+    global alpha
+    global beta
 
     A = A_inp
     B = B_inp
     C = C_inp
+    a = a_inp
+    ad = ad_inp
+    b = b_inp
+    r_0 = r_0_inp
+    r_1 = r_1_inp
+    r_2 = r_2_inp
+    alpha = alpha_inp
+    beta = beta_inp
 
     # Array to store results
     sol = np.zeros((total_downsampled_sims, 8, num_nodes))
@@ -177,7 +193,6 @@ def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
     y_temp = np.copy(initial_conditions)
 
     # Run simulation using Euler method
-    total_sims = 2
     for i in range(1, total_sims):
         y_temp += dt * np.array(system_of_equations(y_temp))
         if i % downsample_eeg == 0:
@@ -197,8 +212,8 @@ def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
     return(x1, x2, x3, V_T_sim)
 
 
-def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp):
-    params = [A_inp, B_inp, C_inp]
+def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp):
+    params = [A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp]
 
     cached_result = load_cached_result(params)
     if cached_result is not None:
@@ -206,13 +221,13 @@ def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp):
         return cached_result
     else:
         non_cached_count += 1
-        x1, x2, x3, _  = run_jansen_and_rit(A_inp, B_inp, C_inp)
+        x1, x2, x3, _  = run_jansen_and_rit(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp)
         return (x1, x2, x3)
 
 
-def run_jansen_and_rit_with_caching(A_inp, B_inp, C_inp):
-    x1, x2, x3, V_T_sim = run_jansen_and_rit(A_inp, B_inp, C_inp)
-    cache_result([A_inp, B_inp, C_inp], [x1, x2, x3])
+def run_jansen_and_rit_with_caching(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp):
+    x1, x2, x3, V_T_sim = run_jansen_and_rit(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp)
+    cache_result([A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp], [x1, x2, x3])
     return (x1, x2, x3, V_T_sim)
 
 # This is just for logging how useful the cacheing is for report purposes
