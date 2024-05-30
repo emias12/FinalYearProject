@@ -155,10 +155,18 @@ non_cached_count = 0
 
 # Run Jansen & Rit Model ########################################################
 
+# Original A = 3.25 # excitatory, B = 22.0 # inhibitory, C = 135
+# B > A. b < a.
+# b = 50, ad = 50, a = 100
+# r_0, r_1, r_2 = 0.56
+# mean_firing_threshold = 6
+# max_firing_rate = 5
+
 def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
     global A
     global B
     global C
+
     A = A_inp
     B = B_inp
     C = C_inp
@@ -169,6 +177,7 @@ def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C):
     y_temp = np.copy(initial_conditions)
 
     # Run simulation using Euler method
+    total_sims = 2
     for i in range(1, total_sims):
         y_temp += dt * np.array(system_of_equations(y_temp))
         if i % downsample_eeg == 0:
@@ -204,6 +213,7 @@ def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp):
 def run_jansen_and_rit_with_caching(A_inp, B_inp, C_inp):
     x1, x2, x3, V_T_sim = run_jansen_and_rit(A_inp, B_inp, C_inp)
     cache_result([A_inp, B_inp, C_inp], [x1, x2, x3])
+    return (x1, x2, x3, V_T_sim)
 
 # This is just for logging how useful the cacheing is for report purposes
 def get_cached_counts():
