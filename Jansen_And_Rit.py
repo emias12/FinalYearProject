@@ -132,7 +132,13 @@ def pass_through_leadfield(sim_data):
 cache_dir = "cache"
 
 def generate_cache_key(params):
-    params_str = "_".join(map(str, params))
+    rounded_params = []
+    for param in params:
+        if isinstance(param, float):
+            rounded_params.append(f"{param:.2f}")
+        else:
+            rounded_params.append(str(param))
+    params_str = "_".join(rounded_params)
     return hashlib.md5(params_str.encode()).hexdigest()
 
 def cache_result(params, result):
