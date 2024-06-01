@@ -2,6 +2,7 @@ import os
 import numpy as np
 import mne
 from scipy.stats import zscore
+import pandas as pd 
 
 eeg_raw_data_dir = 'C:/Users/stapl/Documents/CDocuments/FinalYearProject/Model/eeg_raw_data'
 
@@ -11,10 +12,26 @@ smallest_ch_samples = 74255 #precalculated
 observed_freq_cap = 80
 n_fft = 2048
 
+metadata = pd.read_csv('eeg_metadata.csv')
+
+# Filter subject IDs based on the 'Study' column
+schizophrenia_subjects = metadata[metadata['Study'] == 'Proband with Schizophrenia']['SubjectID'].tolist()
+healthy_controls = metadata[metadata['Study'] == 'Healthy Control']['SubjectID'].tolist()
+
+skipped = []
+
 def gen_emp_psd(eeg_freq):
     for filename in os.listdir(eeg_raw_data_dir):
+
+        subject_id = int(filename.split("_", 5)[4])
+
+        # Add filter here, depending on which subject group you want to generate the PSD for
+        # Make sure to change the name saved too 
+        if (subject_id) not in healthy_controls:
+            continue # Skip to next iteration
+
         eeg_path = os.path.join(eeg_raw_data_dir, filename)
-        raw = mne.io.read_raw_fif(eeg_path, preload=True)
+        raw = mne.io.read_raw_fif(eeg_path, preload=True);
 
         # In order to average spectra, must have stationary signal, so z-score signals first
         data = raw.get_data()  # shape is (n_channels, n_samples)
@@ -49,4 +66,6 @@ def gen_emp_psd(eeg_freq):
     emp_psd = np.stack(list(all_channels_psds.values()))
 
     # Save the average spectrum
-    np.save('emp_spec.npy', emp_psd)
+    np.save('emp_spec_control.npy', emp_psd)
+
+    print(skipped)
