@@ -1,7 +1,6 @@
 import Jansen_And_Rit as JR
 from scipy import signal
 import numpy as np
-import BOLD_Model as BM
 import mne
 from scipy.stats import pearsonr
 
@@ -43,15 +42,70 @@ def find_eeg_loss(x):
     loss = -average_correlation
     return loss
 
+# BOLD #########################################################################################
+
 # Load the empricical (averaged) FC matrix - change this depending on what dataset optimising for
 observed_fc_matrix = np.load("fc_matrices/average_schiz_matrix.npy")
 
+# BOLD MODEL ###################################################################################
+
+import numpy as np
+from sklearn import datasets
+
+# Balloon-Windkessel Hemodynamic Model #########################################################
+
+# Time Constants
+tau_s = 0.65 # Signal decay
+tau_f = 0.41 # blood inflow
+tau_v = 0.98 # blood volume
+tau_q = 0.98 # deoxyhemoglobin content
+
+k = 0.32 # stiffness constant, represents resistance in veins to blood flow
+E_0 = 0.4 # resting oxygen extraction rate
+
+# Chosen Constants
+k1 = 2.77
+k2 = 0.2
+k3 = 0.5
+
+V_0 = 0.03 # fraction of deoxygenated blood in resting state
+
+# ODEs for Balloon Windkessel Model
+def balloon_windkessel_ode(state, t):
+
+    # s: vasodilatory response
+    # f: blood inflow
+    # v: blood volume
+    # q: deoxyhemoglobin content
+    s, f, v, q = state
+
+    # NOTE - multiplying firing rate by a large constant
+    ds_dt  = firing_rates[t] - s / tau_s - (f - 1) / tau_f
+    df_dt = s
+    dv_dt = (f - v**(1/k)) / tau_v
+    dq_dt = ((f * (1 - (1 - E_0)**(1 / f))) / E_0 - (q * v**(1/k)) / v) / tau_q
+
+    return [ds_dt, df_dt, dv_dt, dq_dt]
+
+# LOSS FUNCTION ################################################################################
+
 def find_bold_loss(x):
+    global firing_rates
+
     print(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10])
 
     # If already calculated by optimise EEG, will retrieve saved
     # Otherwise, will run model again
     x1, x2, x3 = JR.run_jansen_and_rit_with_retrieval(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10])
+
+    raw_firing_rates = x1 + x2 + x3
+
+    # Calculate mean and standard deviation across all nodes
+    mean_firing_rate = np.mean(raw_firing_rates)
+    std_firing_rate = np.std(raw_firing_rates)
+
+    # Standardize firing rates
+    firing_rates = (raw_firing_rates - mean_firing_rate) / std_firing_rate
 
     # As J&R model already run with downsampling for eeg, need to adjust downsampling rate
     adjusted_downsample = int(JR.downsample_bold / JR.downsample_eeg)
@@ -67,13 +121,13 @@ def find_bold_loss(x):
     BOLD_temp = np.copy(initial_conditions)
 
     # Run simulation using Euler method, NOTE - total_downsampled_sims is the number of timepoints we have firing rates for 
-    for i in range(JR.total_downsampled_sims):
-        # dt has to match the sampling frew of what you pass into the BOLD model, in this case it is the data already 
-        # downsampled by eeg freq
-        BOLD_temp += (1/JR.eeg_freq) * np.array(BM.balloon_windkessel_ode(BOLD_temp, i, x1, x2, x3))
+    for i in range(JR.total_downsampled_sims - 1):
+    # dt has to match the sampling frew of what you pass into the BOLD model, in this case it is the data already
+    # downsampled by eeg freq
+        BOLD_temp += (1/JR.eeg_freq) * np.array(balloon_windkessel_ode(BOLD_temp, i))
         BOLD_vars[i] = np.copy(BOLD_temp)
 
-    #Downsample by adjusted rate
+    # #Downsample by adjusted rate
     BOLD_vars = BOLD_vars[::adjusted_downsample]
 
     # Take final half of results as simulation points
@@ -87,7 +141,7 @@ def find_bold_loss(x):
     q = BOLD_vars_result[:-1, 3, :]
     v = BOLD_vars_result[:-1, 2, :]
 
-    BOLD_array = BM.V_0 * (BM.k1 * (1 - q) + BM.k2 * (1 - (q / v)) + BM.k3 * (1 - v))
+    BOLD_array = V_0 * (k1 * (1 - q) + k2 * (1 - (q / v)) + k3 * (1 - v))
 
     # Pass BOLD signals through bandpass filter
 
@@ -107,5 +161,3 @@ def find_bold_loss(x):
 
     loss = -pearson_corr
     return loss
-
-
