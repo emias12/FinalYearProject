@@ -53,23 +53,6 @@ SC = np.genfromtxt('SC_in_Schaefer-100.csv', delimiter=',')
 def sigmoid(v, r):
     return max_firing_rate / (1 + np.exp(r * (mean_firing_threshold - v))) # output is num_nodes x 1
 
-# PSPs ###################################################################
-# t is average pulse density/spike rate 
-
-# Excitatory PSP
-def epsp(t):
-    if t < 0:
-        return 0
-    else:
-        return A * a * t * np.exp(-a * t)
-    
-# Inhibitory PSP
-def ipsp(t):
-    if t < 0:
-        return 0
-    else:
-        return B * b * t * np.exp(-b * t)
-
 # x3 is a vector of size num_nodes by 1
 def calculate_zi(x3):
     return np.dot(SC, x3) # output num_nodes x 1
@@ -135,7 +118,7 @@ def generate_cache_key(params):
     rounded_params = []
     for param in params:
         if isinstance(param, float):
-            rounded_params.append(f"{param:.2f}")
+            rounded_params.append(f"{param:.1f}")
         else:
             rounded_params.append(str(param))
     params_str = "_".join(rounded_params)
@@ -231,5 +214,5 @@ def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp,
 
 def run_jansen_and_rit_with_caching(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp):
     x1, x2, x3, V_T_sim = run_jansen_and_rit(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp)
-    cache_result([A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp], [x1, x2, x3])
+    # cache_result([A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp], [x1, x2, x3])
     return (x1, x2, x3, V_T_sim)

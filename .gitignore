@@ -11,3 +11,4 @@ eeg_data/Raw_Subset
 eeg_raw_data/
 cache/
 emp_spec.npy
+results/

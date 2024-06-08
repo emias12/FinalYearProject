@@ -12,8 +12,7 @@ def find_eeg_loss(x):
     x1, x2, x3, V_T_sim = JR.run_jansen_and_rit_with_caching(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10])
      
     # Change this depending on what dataset optimising for
-    
-    emp_spec = np.load('emp_spec_schiz.npy', allow_pickle=True)
+    emp_spec = np.load('emp_spec_control.npy', allow_pickle=True)
 
     gen_data = V_T_sim.T
     fake_info = mne.create_info(62, sfreq=JR.eeg_freq, ch_types='eeg')
@@ -79,13 +78,18 @@ def balloon_windkessel_ode(state, t):
     # q: deoxyhemoglobin content
     s, f, v, q = state
 
+    # Constrain between 1^-10, and 100000000 so that it doesn't cause overflow on the power
+    f = np.clip(f, 1e-10, 1e8)
+    v = np.clip(v, 1e-10, 1e8)
+
     # NOTE - multiplying firing rate by a large constant
     ds_dt  = firing_rates[t] - s / tau_s - (f - 1) / tau_f
     df_dt = s
     dv_dt = (f - v**(1/k)) / tau_v
     dq_dt = ((f * (1 - (1 - E_0)**(1 / f))) / E_0 - (q * v**(1/k)) / v) / tau_q
-
+    
     return [ds_dt, df_dt, dv_dt, dq_dt]
+
 
 # LOSS FUNCTION ################################################################################
 
