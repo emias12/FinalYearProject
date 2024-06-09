@@ -99,7 +99,12 @@ total_downsampled_sims = int(total_sims / downsample_eeg)
 
 leadfield = scipy.io.loadmat('reshaped_leadfield.mat')
 leadfield = leadfield['leadfield'] # Shape (100, 62, 3)
-leadfield = linalg.norm(leadfield, axis=-1).T
+leadfield = np.linalg.norm(leadfield, axis=-1).T
+
+# Normalise leadfield
+
+leadfield_sum = np.sum(leadfield, axis=1)  # Sum along the second axis (summing each row)
+leadfield = leadfield / leadfield_sum[:, np.newaxis]  # Normalise each row
 
 nb_sources = 100
 nb_sensors = 62
@@ -193,8 +198,9 @@ def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C, a_inp=a, ad_inp=ad, b_inp=b, r
     time_points_in_2_secs = int(2 * eeg_freq)
 
     # With vectorised operations, Calculate V_T_sim directly for the desired time points
-    V_T_sim = pass_through_leadfield(C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:]
-                                      + C * alpha * x3[-time_points_in_2_secs:])
+    # V_T_sim = pass_through_leadfield(C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:]
+    #                                   + C * alpha * x3[-time_points_in_2_secs:])
+    V_T_sim = C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:] + C * alpha * x3[-time_points_in_2_secs:]
 
     return(x1, x2, x3, V_T_sim)
 
