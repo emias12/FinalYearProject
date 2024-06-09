@@ -9,6 +9,7 @@ import os
 import gc
 import scipy.stats, scipy.io
 
+
 # Parameters ###################################################################
 
 max_firing_rate = 5         # (per second)
@@ -99,12 +100,13 @@ total_downsampled_sims = int(total_sims / downsample_eeg)
 
 leadfield = scipy.io.loadmat('reshaped_leadfield.mat')
 leadfield = leadfield['leadfield'] # Shape (100, 62, 3)
-leadfield = np.linalg.norm(leadfield, axis=-1).T
+# leadfield = np.linalg.norm(leadfield, axis=-1).T
+leadfield = np.sum(leadfield, axis=-1).T
 
 # Normalise leadfield
 
-leadfield_sum = np.sum(leadfield, axis=1)  # Sum along the second axis (summing each row)
-leadfield = leadfield / leadfield_sum[:, np.newaxis]  # Normalise each row
+# leadfield_sum = np.sum(leadfield, axis=1)  # Sum along the second axis (summing each row)
+# leadfield = leadfield / leadfield_sum[:, np.newaxis]  # Normalise each row
 
 nb_sources = 100
 nb_sensors = 62
@@ -112,8 +114,8 @@ nb_sensors = 62
 def pass_through_leadfield(sim_data):
     sim_eeg_sources = sim_data.T
     sim_eeg_sensors = leadfield @ sim_eeg_sources
-    sim_eeg_zscores = scipy.stats.zscore(sim_eeg_sensors, axis=0)
-    return sim_eeg_zscores.T
+    # sim_eeg_zscores = scipy.stats.zscore(sim_eeg_sensors, axis=0)
+    return sim_eeg_sensors.T
 
 # Memoization ###################################################################
 
@@ -197,10 +199,12 @@ def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C, a_inp=a, ad_inp=ad, b_inp=b, r
     # eeg_freq is 1000Hz, i.e. 1000 points per second. So 2000 points in 2 seconds. 
     time_points_in_2_secs = int(2 * eeg_freq)
 
-    # With vectorised operations, Calculate V_T_sim directly for the desired time points
+    V_T_sim = (C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:]
+                                      + C * alpha * x3[-time_points_in_2_secs:])
+
+    # # With vectorised operations, Calculate V_T_sim directly for the desired time points
     # V_T_sim = pass_through_leadfield(C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:]
     #                                   + C * alpha * x3[-time_points_in_2_secs:])
-    V_T_sim = C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:] + C * alpha * x3[-time_points_in_2_secs:]
 
     return(x1, x2, x3, V_T_sim)
 
@@ -221,4 +225,4 @@ def run_jansen_and_rit_with_retrieval(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp,
 def run_jansen_and_rit_with_caching(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp):
     x1, x2, x3, V_T_sim = run_jansen_and_rit(A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp)
     # cache_result([A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp], [x1, x2, x3])
-    return (x1, x2, x3, V_T_sim)
+    return (x1, x2, x3, pass_through_leadfield(V_T_sim))
