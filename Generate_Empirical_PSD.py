@@ -27,7 +27,7 @@ def gen_emp_psd(eeg_freq):
 
         # Add filter here, depending on which subject group you want to generate the PSD for
         # Make sure to change the name saved too 
-        if (subject_id) not in healthy_controls:
+        if (subject_id) not in schizophrenia_subjects:
             continue # Skip to next iteration
 
         eeg_path = os.path.join(eeg_raw_data_dir, filename)
@@ -66,6 +66,6 @@ def gen_emp_psd(eeg_freq):
     emp_psd = np.stack(list(all_channels_psds.values()))
 
     # Save the average spectrum
-    np.save('emp_spec_control.npy', emp_psd)
+    np.save('emp_spec_schiz.npy', emp_psd)
 
     print(skipped)

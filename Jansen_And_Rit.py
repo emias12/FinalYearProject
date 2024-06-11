@@ -77,7 +77,7 @@ def system_of_equations(x):
     dy3dt = A * ad * (sigmoid(C2 * x1 - C4 * x2 + C * alpha * calculate_zi(x3), r_0)) - 2 * ad * y3 - ad**2 * x3
     return [dx0dt, dy0dt, dx1dt, dy1dt, dx2dt, dy2dt, dx3dt, dy3dt] # num_nodes x 8 matrix output 
 
-eeg_freq = 1000
+eeg_freq = 250
 bold_freq = 0.5
 
 # Simulation parameters
@@ -202,9 +202,6 @@ def run_jansen_and_rit(A_inp=A, B_inp=B, C_inp=C, a_inp=a, ad_inp=ad, b_inp=b, r
 
     # eeg_freq is 1000Hz, i.e. 1000 points per second. So 2000 points in 2 seconds. 
     time_points_in_2_secs = int(2 * eeg_freq)
-
-    V_T_sim = (C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:]
-                                      + C * alpha * x3[-time_points_in_2_secs:])
 
     # # With vectorised operations, Calculate V_T_sim directly for the desired time points
     V_T_sim = pass_through_leadfield(C2 * x1[-time_points_in_2_secs:] - C4 * x2[-time_points_in_2_secs:]
