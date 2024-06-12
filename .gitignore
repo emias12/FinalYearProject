@@ -12,3 +12,4 @@ eeg_raw_data/
 cache/
 emp_spec.npy
 results/
+old_results/

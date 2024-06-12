@@ -100,17 +100,16 @@ total_downsampled_sims = int(total_sims / downsample_eeg)
 
 leadfield = scipy.io.loadmat('reshaped_leadfield.mat')
 leadfield = leadfield['leadfield'] # Shape (100, 62, 3)
-orientations = scipy.io.loadmat('orientations.mat')
-orientations = orientations['combined_coefficients']
 
-# Reshape leadfield to (100, 3, 62)
-leadfield = np.moveaxis(leadfield, -1, 1)
+orientations = np.load('orientations.npy') # Shape (100, 3)
 
-# Transpose orientations to shape (100, 3, 1)
-orientations = orientations[:, :, np.newaxis]
+# Weighted sum of third dimension
+# Reshape orientations to (100, 3, 1) to make it compatible
+leadfield = np.matmul(leadfield, orientations.reshape(100, 3, 1))
 
-# Weighted sum
-leadfield = np.sum(leadfield * orientations, axis=1).T
+# Now leadfield_weighted has shape (100, 62, 1)
+# Squeeze the last dimension to make it (100, 62)
+leadfield = np.squeeze(leadfield, axis=2).T
 
 nb_sources = 100
 nb_sensors = 62
