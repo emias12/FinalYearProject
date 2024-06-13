@@ -34,7 +34,7 @@ def gen_emp_psd(eeg_freq):
 
         # Add filter here, depending on which subject group you want to generate the PSD for
         # Make sure to change the name saved too
-        if (subject_id) not in healthy_controls:
+        if (subject_id) in healthy_controls:
             continue  # Skip to next iteration
 
         eeg_path = os.path.join(eeg_raw_data_dir, filename)

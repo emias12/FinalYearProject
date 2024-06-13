@@ -331,5 +331,5 @@ def run_jansen_and_rit_with_caching(
         alpha_inp,
         beta_inp,
     )
-    cache_result([A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp], [x1, x2, x3])
+    # cache_result([A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp], [x1, x2, x3])
     return (x1, x2, x3, V_T_sim)

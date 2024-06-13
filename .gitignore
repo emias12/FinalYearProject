@@ -13,3 +13,5 @@ cache/
 emp_spec.npy
 results/
 old_results/
+baseline_losses_bold.npy
+baseline_losses_eeg.npy
