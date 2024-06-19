@@ -108,7 +108,7 @@ bold_freq = 0.5
 # Simulation parameters
 dt = 0.001  # Step size
 transient = 60  # Simulation duration for stabilizing (with Euler method)
-sim_length = 600  # Simulation time points (to plot)
+sim_length = 600  # Simulation time points
 
 downsample_eeg = (1 / dt) / eeg_freq
 downsample_bold = (1 / dt) / bold_freq
@@ -145,39 +145,6 @@ def pass_through_leadfield(sim_data):
     sim_eeg_sensors = leadfield @ sim_eeg_sources
     output = scipy.stats.zscore(sim_eeg_sensors.T)
     return output
-
-
-# Memoization ###################################################################
-
-cache_dir = "cache"
-
-
-def generate_cache_key(params):
-    rounded_params = []
-    for param in params:
-        if isinstance(param, float):
-            rounded_params.append(f"{param:.1f}")
-        else:
-            rounded_params.append(str(param))
-    params_str = "_".join(rounded_params)
-    return hashlib.md5(params_str.encode()).hexdigest()
-
-
-def cache_result(params, result):
-    key = generate_cache_key(params)
-    print(key)
-    file_path = os.path.join(cache_dir, key + ".npy")
-    np.save(file_path, result)
-    gc.collect()
-
-
-def load_cached_result(params):
-    key = generate_cache_key(params)
-    file_path = os.path.join(cache_dir, key + ".npy")
-    if os.path.exists(file_path):
-        return np.load(file_path, allow_pickle=True)
-    return None
-
 
 # Run Jansen & Rit Model ########################################################
 
@@ -253,83 +220,4 @@ def run_jansen_and_rit(
         + C * alpha * x3[-time_points_in_2_secs:]
     )
 
-    return (x1, x2, x3, V_T_sim)
-
-
-def run_jansen_and_rit_with_retrieval(
-    A_inp,
-    B_inp,
-    C_inp,
-    a_inp,
-    ad_inp,
-    b_inp,
-    r_0_inp,
-    r_1_inp,
-    r_2_inp,
-    alpha_inp,
-    beta_inp,
-):
-    params = [
-        A_inp,
-        B_inp,
-        C_inp,
-        a_inp,
-        ad_inp,
-        b_inp,
-        r_0_inp,
-        r_1_inp,
-        r_2_inp,
-        alpha_inp,
-        beta_inp,
-    ]
-
-    cached_result = load_cached_result(params)
-    if cached_result is not None:
-        print("cached")
-        return cached_result
-    else:
-        print("not cached")
-        x1, x2, x3, _ = run_jansen_and_rit(
-            A_inp,
-            B_inp,
-            C_inp,
-            a_inp,
-            ad_inp,
-            b_inp,
-            r_0_inp,
-            r_1_inp,
-            r_2_inp,
-            alpha_inp,
-            beta_inp,
-        )
-        return (x1, x2, x3)
-
-
-def run_jansen_and_rit_with_caching(
-    A_inp,
-    B_inp,
-    C_inp,
-    a_inp,
-    ad_inp,
-    b_inp,
-    r_0_inp,
-    r_1_inp,
-    r_2_inp,
-    alpha_inp,
-    beta_inp,
-):
-    x1, x2, x3, V_T_sim = run_jansen_and_rit(
-        A_inp,
-        B_inp,
-        C_inp,
-        a_inp,
-        ad_inp,
-        b_inp,
-        r_0_inp,
-        r_1_inp,
-        r_2_inp,
-        alpha_inp,
-        beta_inp,
-    )
-    # cache_result([A_inp, B_inp, C_inp, a_inp, ad_inp, b_inp, r_0_inp, r_1_inp, r_2_inp, alpha_inp, beta_inp], [x1, x2, x3])
     return (x1, x2, x3, V_T_sim)

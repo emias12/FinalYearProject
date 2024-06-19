@@ -10,8 +10,7 @@ def find_eeg_loss(x):
         x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10]
     )  # A, B, C, a, ad, b, r_0, r_1, r_2, alpha, beta
 
-    # Running cached version, so x1 x2 x3 saved to be used in optimise BOLD if same paramters input
-    x1, x2, x3, V_T_sim = JR.run_jansen_and_rit_with_caching(
+    x1, x2, x3, V_T_sim = JR.run_jansen_and_rit(
         x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10]
     )
 
@@ -19,6 +18,7 @@ def find_eeg_loss(x):
     emp_spec = np.load("emp_spec_schiz.npy", allow_pickle=True)
 
     gen_data = V_T_sim.T
+    # Create a fake info object so mne can recognise the data as EEG signal 
     fake_info = mne.create_info(62, sfreq=JR.eeg_freq, ch_types="eeg")
     gen_raw = mne.io.RawArray(gen_data, fake_info)
     gen_spec = gen_raw.compute_psd(fmin=0, fmax=80, picks="all")
@@ -49,7 +49,7 @@ def find_eeg_loss(x):
 # BOLD #########################################################################################
 
 # Load the empricical (averaged) FC matrix - change this depending on what dataset optimising for
-observed_fc_matrix = np.load("fc_matrices/average_schiz_matrix.npy")
+observed_fc_matrix = np.load("fc_matrices/average_control_matrix.npy")
 
 # BOLD MODEL ###################################################################################
 
@@ -104,9 +104,7 @@ def find_bold_loss(x):
 
     print(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10])
 
-    # If already calculated by optimise EEG, will retrieve saved
-    # Otherwise, will run model again
-    x1, x2, x3 = JR.run_jansen_and_rit_with_retrieval(
+    x1, x2, x3, _ = JR.run_jansen_and_rit(
         x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10]
     )
 

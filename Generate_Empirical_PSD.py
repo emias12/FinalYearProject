@@ -10,9 +10,9 @@ eeg_raw_data_dir = (
 
 all_channels_psds = {}  # Will be of length 62 as this is max channels
 
-smallest_ch_samples = 74255  # precalculated
+smallest_ch_samples = 74255  # precalculated taking max after running through all files
 observed_freq_cap = 80
-n_fft = 2048
+n_fft = 2048 # or 1024 depending on granularity
 
 metadata = pd.read_csv("eeg_metadata.csv")
 
@@ -55,7 +55,7 @@ def gen_emp_psd(eeg_freq):
 
             ch_data = data[ch_idx, :]  # Get data for the specific channel
 
-            psd, _ = mne.time_frequency.psd_array_welch(
+            psd, _ = mne.time_frequency.psd_array_welch( # Second output (ignored here) is freqs
                 ch_data,
                 sfreq=eeg_freq,
                 fmin=0,
@@ -65,6 +65,7 @@ def gen_emp_psd(eeg_freq):
                 window="hamming",
             )
 
+            # Build up dictionary of psds for each channel
             if ch_name in all_channels_psds:
                 all_channels_psds[ch_name].append(psd)
             else:
