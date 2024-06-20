@@ -29,6 +29,12 @@ effective treatments
 - Contains the loss functions for EEG and BOLD
 - Also includes Balloon-Windkessel hemodynamic model
 
+### OptimiseAll.ipynb
+- This just gives an idea of how the Bayesian optimisation is run
+- Many more configuratins were experimented but not included
+- To plot convergence or partial dependency plots use plot_convergence(res_output) or plot_objective(res_output)
+- To run the model to see the resulting hyperparameters, change the gp_optimise to the desired loss function, and update loss function empirical psd/fc 
+
 ### leadfield_generator.m
 - Matlab file that generated the leadfield matrix
 
@@ -49,11 +55,6 @@ effective treatments
 - Contains the code to assign orientations to each centroid
 - Also contains code to generate plot of normals for each centroid as seen in the report
 
-### OptimiseAll.ipynb
-- This just gives an idea of how the Bayesian optimisation is run
-- Many more configuratins were experimented but not included
-- To plot convergence or partial dependency plots use plot_convergence(res_output) or plot_objective(res_output)
-
 ### Plot_EEG.ipynb
 - Has 3 plots
 - First is all eeg channels in one plot, can filter to desired channels
@@ -67,6 +68,11 @@ effective treatments
 - This is just some playing around code for plotting the PSDs for empirical and simulated data 
 
 ## Files
+
+### Results folder
+- Contains the output res files from the results used in the report. This includes all the iterations of the bayesian optimiser, the loss they gave, and more information about the acquistion function used etc
+- Contains the losses used to plot the box and whisker diagrams
+- Contains some plots/figures used in the report
 
 ### reshaped_leadfield.mat
 - Resulting leadfield matrix, reshaped to be compatible in the code
