@@ -9,7 +9,6 @@ participants.txt
 eeg_data/Raw_Subset
 eeg_raw_data/
 emp_spec.npy
-results/
 eeg_metadata.csv
 lossplots.ipynb
 normalisedparams.ipynb
